@@ -2,9 +2,15 @@ import configparser as cp
 import os
 import extractor as ext
 import logging
+import sys
 
 
 def getData():
+
+    '''
+        Función que devuelve el dataframe creado por la instancia de la clase Extractor a la cual se le pasó como parámetro
+        la URL del endpoint pertinente.
+    '''
 
     logging.info("Retrieving data from API.")
 
@@ -16,17 +22,25 @@ def getData():
 
 def copyToTempTable():
 
+    '''
+        Función que copia los datos del dataframe hacia la tabla temporal temp_users.
+    '''
+
     logging.info("Copying the data from csv to temporary table.")
 
-    extractor.run_MySQL_query('DROP TABLE IF EXISTS temp_users;')
+    extractor.run_MySQL_query('DROP TEMPORARY TABLE IF EXISTS temp_users;')
 
-    extractor.run_MySQL_query('CREATE TABLE IF NOT EXISTS temp_users SELECT * FROM users LIMIT 0;')
+    extractor.run_MySQL_query('CREATE TEMPORARY TABLE IF NOT EXISTS temp_users SELECT * FROM users LIMIT 0;')
 
     data_read.to_sql('temp_users',con=extractor.engine,if_exists='replace',index=False)
 
     logging.info("Data has been copied into temporary table.")
 
 def updateUsersByExistingID():
+
+    '''
+        Función que hace un update de los usuarios que se vieron modificados a partir del ID existente desde el archivo origen.
+    '''
 
     logging.info("Updating data modified for existing users.")
 
@@ -51,6 +65,10 @@ def updateUsersByExistingID():
 
 def deleteByExistingEmail():
 
+    '''
+        Función que elimina los usuarios que vienen con el mismo mail, pero distinto ID desde el archivo origen.
+    '''
+
     logging.info("Deleting users with existing email but different id. The new id will be inserted in the next step.")
 
     query = """ DELETE FROM users WHERE id IN (SELECT id FROM 
@@ -62,7 +80,11 @@ def deleteByExistingEmail():
     logging.info("Data deleted for existing emails but different id.")
     
 
-def insertNewUsers(): # Se insertan los nuevos y los que tenían un ID nuevo pero con mail ya existente que fueron borrados en el paso anterior
+def insertNewUsers(): 
+    '''
+        Función que inserta los nuevos usuarios y los que tenían ID nuevo para un mail ya existente en la tabla users.
+    '''
+
     logging.info("Inserting new records into users table.")
 
     query = """ INSERT INTO users (SELECT tu.*, CURRENT_TIMESTAMP(6) FROM temp_users tu 
@@ -77,7 +99,7 @@ def insertNewUsers(): # Se insertan los nuevos y los que tenían un ID nuevo per
 
 def main():
 
-    global extractor, data_read, logger
+    global extractor, data_read
 
     logging.basicConfig(filename=os.path.join(os.path.dirname(__file__), 'log', 'execution.log'),
                         filemode='w',
@@ -87,12 +109,29 @@ def main():
     logging.info("The execution has started.")
 
     logging.info("Trying to connect to MySQL database.")
-    extractor = ext.Extractor()
-    extractor.getMySQLConnection()
 
     try:
+
+        extractor = ext.Extractor()
+        extractor.getMySQLConnection()
+
+    except Exception as e:
+
+        logging.error("Extractor could not be generated.")
+        logging.error(str(e))
+        sys.exit(1)
+
+    try:
+        
         data_read = getData()
 
+    except Exception as e:
+
+        logging.error("Data could not be retrieve from endpoint.")
+        logging.error(str(e))
+        sys.exit(1)
+
+    try:
         copyToTempTable()
 
         deleteByExistingEmail()
@@ -109,12 +148,14 @@ def main():
         
 
     except Exception as e:
-
-        logger.error("ERROR: " + str(e))
-
-        extractor.closeMySQLConnection()
         
+        logging.error("An error has occurred.")
+        logging.error(str(e))
+
+        extractor.rollback_MySQL_connection()
+        extractor.closeMySQLConnection()
         extractor.disposeMySQLConnection()
+        sys.exit(1)
 
 
 main()
