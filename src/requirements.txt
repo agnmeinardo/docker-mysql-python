@@ -1,0 +1,7 @@
+configparser
+pandas
+requests
+sqlalchemy
+mysql-connector-python
+pymysql
+mysqlclient

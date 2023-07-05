@@ -1,0 +1,12 @@
+2023-07-04 13:11:26,846 - INFO - The execution has started.
+2023-07-04 13:11:26,846 - INFO - Trying to connect to MySQL database.
+2023-07-04 13:11:26,863 - INFO - Retrieving data from API.
+2023-07-04 13:11:28,031 - INFO - Copying the data from csv to temporary table.
+2023-07-04 13:11:28,146 - INFO - Data has been copied into temporary table.
+2023-07-04 13:11:28,146 - INFO - Deleting users with existing email but different id. The new id will be inserted in the next step.
+2023-07-04 13:11:28,146 - INFO - Data deleted for existing emails but different id.
+2023-07-04 13:11:28,146 - INFO - Updating data modified for existing users.
+2023-07-04 13:11:28,153 - INFO - Data modified for existing users.
+2023-07-04 13:11:28,153 - INFO - Inserting new records into users table.
+2023-07-04 13:11:28,153 - INFO - New data was inserted into users table.
+2023-07-04 13:11:28,153 - INFO - The execution has finished.

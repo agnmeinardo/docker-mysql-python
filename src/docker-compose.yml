@@ -1,0 +1,39 @@
+version: '1'
+
+services:
+
+    python_app:
+        build:
+            context: .
+            dockerfile: python/Dockerfile
+        container_name: python_app
+        depends_on:
+            - mysql_db
+        links:
+            - mysql_db:mysql_db
+        networks:
+            - app-tier
+        command:
+            tail -f /dev/null
+
+    mysql_db:
+        image: mysql:8.0
+        container_name: mysql_db
+        environment:
+            MYSQL_USER: 'PSH'
+            MYSQL_PASSWORD: 'MyPSH2023'
+            MYSQL_ROOT_USER: 'PSH'
+            MYSQL_DATABASE: 'challenge'
+            MYSQL_ROOT_PASSWORD: 'MyPSH2023'
+            MYSQL_TCP_PORT: 4004
+        ports:
+            - '4004:4004'
+        volumes: 
+            - ./init:/docker-entrypoint-initdb.d
+        networks:
+            - app-tier
+
+networks:
+    app-tier:
+        driver: bridge
+        name: app-tier
